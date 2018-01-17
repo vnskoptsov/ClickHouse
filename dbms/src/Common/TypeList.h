@@ -103,21 +103,21 @@ struct TypeListConcat
 /// TypeList Map function.
 /// Usage:
 ///     using ResultTypeList = typename TypeListMap<Function, TypeListArgs>::Type;
-template <template <typename ...> typename Function, typename TypeListArgs>
+template <template <typename> typename Function, typename TypeListArgs>
 struct TypeListMap
 {
     using Type = typename std::conditional<
             TypeListArgs::size == 0,
             TypeList<>,
             typename PrependToTypeList<
-                    typename Function<typename TypeListArgs::Head>,
+                    Function<typename TypeListArgs::Head>,
                     typename TypeListMap<Function, typename TypeListArgs::Tail>::Type>::Type>::type;
 };
 
 /// TypeList Map function.
 /// Usage:
 ///     using ResultTypeList = typename TypeListMap<Function, TypeListArgs>::Type;
-template <template <typename ...> typename Functions, typename TypeListArgs>
+template <typename Functions, typename TypeListArgs>
 struct TypeListMultiplication
 {
     using Type = typename std::conditional<
