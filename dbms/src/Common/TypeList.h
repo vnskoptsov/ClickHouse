@@ -117,16 +117,16 @@ struct TypeListMap
 /// TypeList Map function.
 /// Usage:
 ///     using ResultTypeList = typename TypeListMap<Function, TypeListArgs>::Type;
-template <typename Functions, typename TypeListArgs>
-struct TypeListMultiplication
-{
-    using Type = typename std::conditional<
-            Functions::size == 0,
-            TypeList<>,
-            typename TypeListConcat<
-                    typename TypeListMap<typename Functions::Head, TypeListArgs>::Type,
-                    typename TypeListMultiplication<typename Functions::Tail, TypeListArgs>::Type>::Type>::type;
-};
+//template <typename Functions, typename TypeListArgs>
+//struct TypeListMultiplication
+//{
+//    using Type = typename std::conditional<
+//            Functions::size == 0,
+//            TypeList<>,
+//            typename TypeListConcat<
+//                    typename TypeListMap<typename Functions::Head, TypeListArgs>::Type,
+//                    typename TypeListMultiplication<typename Functions::Tail, TypeListArgs>::Type>::Type>::type;
+//};
 
 
 }
