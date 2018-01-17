@@ -97,7 +97,7 @@ struct TypeListConcat
             TypeListLeft,
             typename TypeListConcat<
                     typename AppendToTypeList<typename TypeListRight::Head, TypeListLeft>,
-                    typename TypeListRight::Tail>>::type;
+                    typename TypeListRight::Tail>::Type>::type;
 };
 
 /// TypeList Map function.
@@ -111,7 +111,7 @@ struct TypeListMap
             TypeList<>,
             typename PrependToTypeList<
                     typename Function<typename TypeListArgs::Head>,
-                    typename TypeListMap<Function, typename TypeListArgs::Tail>>>::type;
+                    typename TypeListMap<Function, typename TypeListArgs::Tail>::Type>::Type>::type;
 };
 
 /// TypeList Map function.
@@ -124,8 +124,8 @@ struct TypeListMultiplication
             Functions::size == 0,
             TypeList<>,
             typename TypeListConcat<
-                    typename TypeListMap<typename Functions::Head, TypeListArgs>,
-                    typename TypeListMultiplication<typename Functions::Tail, TypeListArgs>>>::type;
+                    typename TypeListMap<typename Functions::Head, TypeListArgs>::Type,
+                    typename TypeListMultiplication<typename Functions::Tail, TypeListArgs>::Type>::Type>::type;
 };
 
 
