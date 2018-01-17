@@ -17,7 +17,7 @@ namespace DB::GatherUtils
 {
 
 template <typename T>
-struct NumericArraySource : public IArraySource
+struct NumericArraySource : public ArraySourceImpl<NumericArraySource<T>>
 {
     using Slice = NumericArraySlice<T>;
     using Column = ColumnArray;
@@ -108,7 +108,6 @@ struct NumericArraySource : public IArraySource
     }
 };
 
-
 template <typename Base>
 struct ConstSource : public Base
 {
@@ -120,18 +119,6 @@ struct ConstSource : public Base
 
     explicit ConstSource(const ColumnConst & col)
             : Base(static_cast<const typename Base::Column &>(col.getDataColumn())), total_rows(col.size())
-    {
-    }
-
-    /// Constructors for NullableArraySource.
-
-    template <typename ColumnType>
-    ConstSource(const ColumnType & col, size_t total_rows) : Base(col), total_rows(total_rows)
-    {
-    }
-
-    template <typename ColumnType>
-    ConstSource(const ColumnType & col, const ColumnUInt8 & null_map, size_t total_rows) : Base(col, null_map), total_rows(total_rows)
     {
     }
 
@@ -155,12 +142,63 @@ struct ConstSource : public Base
         return total_rows * Base::getSizeForReserve();
     }
 
-    size_t getColumnSize() const // overrides for IArraySource
+    size_t getColumnSize() const
     {
         return total_rows;
     }
 
-    bool isConst() const // overrides for IArraySource
+    bool isConst() const
+    {
+        return true;
+    }
+};
+
+
+template <typename Base>
+struct ConstArraySource : public ArraySourceImpl<ConstArraySource<Base>>
+{
+    using Slice = typename Base::Slice;
+    using Column = ColumnConst;
+
+    size_t total_rows;
+    size_t row_num = 0;
+
+    template <typename ColumnType>
+    ConstArraySource(const ColumnType & col, size_t total_rows) : Base(col), total_rows(total_rows)
+    {
+    }
+
+    template <typename ColumnType>
+    ConstArraySource(const ColumnType & col, const ColumnUInt8 & null_map, size_t total_rows) : Base(col, null_map), total_rows(total_rows)
+    {
+    }
+
+    void next()
+    {
+        ++row_num;
+    }
+
+    bool isEnd() const
+    {
+        return row_num == total_rows;
+    }
+
+    size_t rowNum() const
+    {
+        return row_num;
+    }
+
+    size_t getSizeForReserve() const
+    {
+        return total_rows * Base::getSizeForReserve();
+    }
+
+    size_t getColumnSize() const override
+    {
+        return total_rows;
+    }
+
+    bool isConst() const override
     {
         return true;
     }
@@ -368,7 +406,7 @@ inline std::unique_ptr<IStringSource> createDynamicStringSource(const IColumn & 
 using StringSources = std::vector<std::unique_ptr<IStringSource>>;
 
 
-struct GenericArraySource : public IArraySource
+struct GenericArraySource : public ArraySourceImpl<GenericArraySource>
 {
     using Slice = GenericArraySlice;
     using Column = ColumnArray;
@@ -460,7 +498,7 @@ struct GenericArraySource : public IArraySource
 
 
 template <typename ArraySource>
-struct NullableArraySource : public ArraySource
+struct NullableArraySource : public ArraySourceImpl<NullableArraySource<ArraySource>>
 {
     using Slice = NullableArraySlice<typename ArraySource::Slice>;
     using ArraySource::prev_offset;

@@ -19,11 +19,11 @@ struct ArraySourceCreator<Type, Types...>
             if (null_map)
             {
                 if (is_const)
-                    return std::make_unique<ConstSource<NullableArraySource<NumericArraySource<Type>>>>(col, *null_map, total_rows);
+                    return std::make_unique<ConstArraySource<NullableArraySource<NumericArraySource<Type>>>>(col, *null_map, total_rows);
                 return std::make_unique<NullableArraySource<NumericArraySource<Type>>>(col, *null_map);
             }
             if (is_const)
-                return std::make_unique<ConstSource<NumericArraySource<Type>>>(col, total_rows);
+                return std::make_unique<ConstArraySource<NumericArraySource<Type>>>(col, total_rows);
             return std::make_unique<NumericArraySource<Type>>(col);
         }
 
@@ -39,11 +39,11 @@ struct ArraySourceCreator<>
         if (null_map)
         {
             if (is_const)
-                return std::make_unique<ConstSource<NullableArraySource<GenericArraySource>>>(col, *null_map, total_rows);
+                return std::make_unique<ConstArraySource<NullableArraySource<GenericArraySource>>>(col, *null_map, total_rows);
             return std::make_unique<NullableArraySource<GenericArraySource>>(col, *null_map);
         }
         if (is_const)
-            return std::make_unique<ConstSource<GenericArraySource>>(col, total_rows);
+            return std::make_unique<ConstArraySource<GenericArraySource>>(col, total_rows);
         return std::make_unique<GenericArraySource>(col);
     }
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Functions/GatherUtils/Algorithms.h>
+#include <Functions/GatherUtils/Visitors/ArraySourceVisitor.h>
 #include <Core/TypeListNumber.h>
 
 namespace DB::GatherUtils
@@ -21,9 +22,9 @@ struct ArraySourceSelector<Base, Type, Types ...>
             Base::selectImpl(*array, args ...);
         else if (auto nullable_array = typeid_cast<NullableArraySource<NumericArraySource<Type>> *>(&source))
             Base::selectImpl(*nullable_array, args ...);
-        else if (auto const_array = typeid_cast<ConstSource<NumericArraySource<Type>> *>(&source))
+        else if (auto const_array = typeid_cast<ConstArraySource<NumericArraySource<Type>> *>(&source))
             Base::selectImpl(*const_array, args ...);
-        else if (auto const_nullable_array = typeid_cast<ConstSource<NullableArraySource<NumericArraySource<Type>>> *>(&source))
+        else if (auto const_nullable_array = typeid_cast<ConstArraySource<NullableArraySource<NumericArraySource<Type>>> *>(&source))
             Base::selectImpl(*const_nullable_array, args ...);
         else
             ArraySourceSelector<Base, Types ...>::select(source, args ...);
@@ -40,18 +41,56 @@ struct ArraySourceSelector<Base>
             Base::selectImpl(*array, args ...);
         else if (auto nullable_array = typeid_cast<NullableArraySource<GenericArraySource> *>(&source))
             Base::selectImpl(*nullable_array, args ...);
-        else if (auto const_array = typeid_cast<ConstSource<GenericArraySource> *>(&source))
+        else if (auto const_array = typeid_cast<ConstArraySource<GenericArraySource> *>(&source))
             Base::selectImpl(*const_array, args ...);
-        else if (auto const_nullable_array = typeid_cast<ConstSource<NullableArraySource<GenericArraySource>> *>(&source))
+        else if (auto const_nullable_array = typeid_cast<ConstArraySource<NullableArraySource<GenericArraySource>> *>(&source))
             Base::selectImpl(*const_nullable_array, args ...);
         else
             throw Exception(std::string("Unknown ArraySource type: ") + demangle(typeid(source).name()), ErrorCodes::LOGICAL_ERROR);
     }
 };
 
+template <typename Base, typename Tuple, int index, typename ... Args>
+void callSelectMemberFunctionWithTupleArgument(Tuple && tuple, Args && ... args)
+{
+    if constexpr (index == std::tuple_size<Tuple>::value)
+        Base::selectImpl(args ...);
+    else
+        callSelectMemberFunctionWithTupleArgument<Base, Tuple, index + 1>(tuple, args ..., std::get<index>(tuple));
+}
+
+template <typename Base, typename Args ...>
+struct ArraySourceSelectorVisitor : public ArraySourceVisitorImpl<ArraySourceSelectorVisitor>
+{
+    explicit ArraySourceSelectorVisitor(Args && ... args) : packed_args(args ...) {}
+
+    template <typename T>
+    void visitImpl(ConstArraySource & source)
+    {
+        callSelectMemberFunctionWithTupleArgument(std::move(packed_args), source);
+    }
+
+    std::tuple<Args && ...> packed_args;
+};
+
 template <typename Base>
-using GetArraySourceSelector = typename ApplyTypeListForClass<ArraySourceSelector,
-        typename PrependToTypeList<Base, TypeListNumbers>::Type>::Type;
+struct ArraySourceSelector2<Base>
+{
+    template <typename ... Args>
+    static void select(IArraySource & source, Args && ... args)
+    {
+        source.accept(ArraySourceSelectorVisitor<Base, Args ...>(args ...));
+    }
+};
+
+
+template <typename Base>
+using GetArraySourceSelector = ArraySourceSelector2<Base>;
+
+//
+//template <typename Base>
+//using GetArraySourceSelector = typename ApplyTypeListForClass<ArraySourceSelector,
+//        typename PrependToTypeList<Base, TypeListNumbers>::Type>::Type;
 
 template <typename Base, typename ... Types>
 struct ArraySinkSelector;
