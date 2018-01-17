@@ -96,7 +96,7 @@ struct TypeListConcat
             TypeListRight::size == 0,
             TypeListLeft,
             typename TypeListConcat<
-                    typename AppendToTypeList<typename TypeListRight::Head, TypeListLeft>,
+                    typename AppendToTypeList<typename TypeListRight::Head, TypeListLeft>::Type,
                     typename TypeListRight::Tail>::Type>::type;
 };
 
